@@ -1,0 +1,22 @@
+# Ignorar el archivo .env
+.env
+
+# Ignorar archivos específicos
+config/php.ini.dev
+config/php.ini.prod
+web/conection.php
+web/.gitignore
+web/README.md
+
+# Ignorar cualquier archivo o directorio de configuración sensible
+*.log
+*.bak
+*.tmp
+
+# Ignorar directorios enteros
+node_modules/
+.idea/
+.vscode/
+
+# Ignorar otros archivos específicos
+.gitignore

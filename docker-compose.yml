@@ -1,0 +1,73 @@
+services:
+  web:
+    image: php:8.2-apache
+    container_name: php_apache_xss
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./web:/var/www/html
+      - ./config/apache-php-xss.conf:/etc/apache2/conf-available/apache-php-xss.conf
+    env_file:
+      - .env
+    environment:
+      - APACHE_RUN_USER=#1001
+      - APACHE_RUN_GROUP=#1001
+    depends_on:
+      - db
+    command: >
+      bash -c "apt-get update &&
+               apt-get install -y libmariadb-dev-compat libmariadb-dev &&
+               docker-php-ext-install pdo pdo_mysql &&
+               a2enconf apache-php-xss &&
+               a2disconf docker-php &&
+               apache2-foreground"
+
+  config:
+    image: alpine:latest
+    container_name: config_php_ini
+    volumes:
+      - ./web:/var/www/html
+      - ./config:/config
+    environment:
+      - MODE=dev  # Cambia a 'prod' según el entorno
+    entrypoint: |
+      /bin/sh -c '
+        if [ "$MODE" == "dev" ]; then
+          cp /config/php.ini.dev /var/www/html/php.ini;
+        elif [ "$MODE" == "prod" ]; then
+          cp /config/php.ini.prod /var/www/html/php.ini;
+        else
+          cp /config/php.ini.prod /var/www/html/php.ini;
+        fi
+      '
+    depends_on:
+    - web
+
+  db:
+    image: mariadb:10.6
+    container_name: mariadb_xss
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./entrypoint.sh:/entrypoint.sh
+    ports:
+      - "3306:3306"
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: phpmyadmin_xss
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+
+volumes:
+  mariadb_data:
+
